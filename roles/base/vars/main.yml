@@ -5,6 +5,8 @@ required_packages:
     state: present
   - name: curl
     state: present
+  - name: net-tools
+    state: present
   - name: apt-transport-https
     state: present
   - name: default-jre
