@@ -1,6 +1,9 @@
 # Python virtualenv
 .venv
 
+# Vagrant
+.vagrant
+
 # IDE
 .idea/
 *.iml
