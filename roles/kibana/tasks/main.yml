@@ -1,2 +1,39 @@
 ---
 # tasks file for kibana
+# -- INSTALL
+- name: Check if kibana is already installed
+  ansible.builtin.systemd:
+    state: started
+    name: kibana
+    enabled: true
+  ignore_errors: true
+  register: kibana_service
+  become: true
+- name: Install kibana
+  ansible.builtin.apt:
+    deb: "https://artifacts.elastic.co/downloads/kibana/kibana-{{ version }}-amd64.deb"
+    state: present
+  become: true
+  when: kibana_service.status is not defined
+- name: Install kibana
+  ansible.builtin.systemd:
+    state: started
+    name: kibana
+    enabled: true
+    daemon_reload: true
+  become: true
+  when: kibana_service.status is not defined
+
+# --  CONFIGURE
+- name: "Configure kibana"
+  ansible.builtin.template:
+    src: "kibana.yml.j2"
+    dest: /etc/kibana/kibana.yml
+    backup: true
+    force: yes
+    mode: '660'
+    group: kibana
+  notify:
+  - Restart kibana
+  become: true
+

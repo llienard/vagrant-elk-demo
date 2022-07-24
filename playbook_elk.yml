@@ -17,6 +17,12 @@
     - name: "Elastic : Installation & Configuration"
       ansible.builtin.import_role:
         name: elastic
+- name: Installation & configuration Kibana
+  hosts: kibana
+  tasks:
+    - name: "Kibana : Installation & Configuration"
+      ansible.builtin.import_role:
+        name: kibana
 - name: Cleaning
   hosts: all
   tasks:
