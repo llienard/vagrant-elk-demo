@@ -1,0 +1,40 @@
+---
+# tasks file for filebeat
+
+# -- INSTALL
+- name: Check if filebeat is already installed
+  ansible.builtin.systemd:
+    state: started
+    name: filebeat
+    enabled: true
+  ignore_errors: true
+  register: filebeat_service
+  become: true
+- name: Install filebeat
+  ansible.builtin.apt:
+    deb: "https://artifacts.elastic.co/downloads/beats/filebeat/filebeat-{{ version }}-amd64.deb"
+    state: present
+  become: true
+  when: filebeat_service.status is not defined
+- name: Install filebeat
+  ansible.builtin.systemd:
+    state: started
+    name: filebeat
+    enabled: true
+    daemon_reload: true
+  become: true
+  when: filebeat_service.status is not defined
+
+# --  CONFIGURE
+- name: "Configure filebeat"
+  ansible.builtin.template:
+    src: "filebeat.yml.j2"
+    dest: /etc/filebeat/filebeat.yml
+    backup: true
+    force: yes
+    mode: '660'
+    group: filebeat
+  notify:
+  - Restart filebeat
+  become: true
+  when: es_url is defined and kibana_url is defined

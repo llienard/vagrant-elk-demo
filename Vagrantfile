@@ -43,18 +43,34 @@ machines = [
     :ram => 8192,
     :cpu => 6,
     :tags => [ "elasticsearch", "kibana" ]
+  },
+  {
+    :hostname => "work1",
+    :private_ip => "192.168.56.20",
+    :ram => 2048,
+    :cpu => 1,
+    :tags => [ "filebeat" ]
   }
 ]
 
 Vagrant.configure("2") do |config|
+  config.vagrant.plugins = ['vagrant-hostmanager']
+  config.hostmanager.enabled = true
+  config.hostmanager.manage_host = true
+  config.hostmanager.manage_guest = true
+  config.hostmanager.ignore_private_ip = false
+  config.hostmanager.include_offline = true
+
   machines.each do |machine|
     config.vm.define machine[:hostname] do |node|
       node.vm.box = "ubuntu/focal64"
       node.vm.hostname = machine[:hostname]
-      node.vm.network "private_network", type: "dhcp"
+      node.vm.network "private_network", ip: machine[:private_ip], virtualbox__intnet: true
+      
       if machine[:tags].include? 'elasticsearch'
         node.vm.network "forwarded_port", guest: 9200, host: 9200
       end
+      
       if machine[:tags].include? 'kibana'
         node.vm.network "forwarded_port", guest: 5601, host: 5601
       end
@@ -78,15 +94,14 @@ Vagrant.configure("2") do |config|
         "elasticsearch" => machines.select { |machine| machine[:tags].include? 'elasticsearch' }.collect { |machine| machine[:hostname] },
         "kibana" => machines.select { |machine| machine[:tags].include? 'kibana' }.collect { |machine| machine[:hostname] },
         "logstash" => machines.select { |machine| machine[:tags].include? 'logstash' }.collect { |machine| machine[:hostname] },
-        "all_groups:children" => ["elasticsearch", "kibana", "logstash"]
+        "filebeat" => machines.select { |machine| machine[:tags].include? 'filebeat' }.collect { |machine| machine[:hostname] },
+        "all_groups:children" => ["elasticsearch", "kibana", "logstash", "filebeat"]
       }
-      # STDOUT.write "groups " . ansible.groups.to_json
-      # ansible.host_vars = machines.inject({}) do |host_vars, machine|
-      #   host_vars[machine[:hostname]] = {
-      #     :tags => machine[:tags].join(' ')
-      #   }
-      #   host_vars
-      # end
+      ansible.host_vars = {
+        "es_url" => "http://#{machines.find {  |machine| machine[:tags].include? 'elasticsearch' }[:private_ip]}:9200",
+        "kibana_url" => "http://#{machines.find {  |machine| machine[:tags].include? 'kibana' }[:private_ip]}:5601",
+
+      }
       
     end
   end
