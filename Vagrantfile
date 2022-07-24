@@ -36,21 +36,28 @@
 #   }
 # ]
 
-machine = {
-  :hostname => "elk",
-  :private_ip => "192.168.56.10",
-  :ram => 8192,
-  :cpu => 6,
-  :tags => [ "elasticsearch", "kibana" ]
-}
+machines = [
+  {
+    :hostname => "elk",
+    :private_ip => "192.168.56.10",
+    :ram => 8192,
+    :cpu => 6,
+    :tags => [ "elasticsearch", "kibana" ]
+  }
+]
 
 Vagrant.configure("2") do |config|
+  machines.each do |machine|
     config.vm.define machine[:hostname] do |node|
       node.vm.box = "ubuntu/focal64"
       node.vm.hostname = machine[:hostname]
-      node.vm.network "private_network", ip: machine[:private_ip]
-      node.vm.network "forwarded_port", guest: 9200, host: 9200
-      node.vm.network "forwarded_port", guest: 5601, host: 5601
+      node.vm.network "private_network", type: "dhcp"
+      if machine[:tags].include? 'elasticsearch'
+        node.vm.network "forwarded_port", guest: 9200, host: 9200
+      end
+      if machine[:tags].include? 'kibana'
+        node.vm.network "forwarded_port", guest: 5601, host: 5601
+      end
 
       node.vm.provider "virtualbox" do |v|
         v.name = machine[:hostname]
@@ -67,5 +74,20 @@ Vagrant.configure("2") do |config|
     #
     config.vm.provision "ansible" do |ansible|
       ansible.playbook = "playbook_elk.yml"
+      ansible.groups = {
+        "elasticsearch" => machines.select { |machine| machine[:tags].include? 'elasticsearch' }.collect { |machine| machine[:hostname] },
+        "kibana" => machines.select { |machine| machine[:tags].include? 'kibana' }.collect { |machine| machine[:hostname] },
+        "logstash" => machines.select { |machine| machine[:tags].include? 'logstash' }.collect { |machine| machine[:hostname] },
+        "all_groups:children" => ["elasticsearch", "kibana", "logstash"]
+      }
+      # STDOUT.write "groups " . ansible.groups.to_json
+      # ansible.host_vars = machines.inject({}) do |host_vars, machine|
+      #   host_vars[machine[:hostname]] = {
+      #     :tags => machine[:tags].join(' ')
+      #   }
+      #   host_vars
+      # end
+      
     end
+  end
 end
