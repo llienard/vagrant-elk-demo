@@ -1,0 +1,40 @@
+---
+# tasks file for elastic
+
+# -- INSTALL
+- name: Check if elastic is already installed
+  ansible.builtin.systemd:
+    state: started
+    name: elasticsearch
+    enabled: true
+  ignore_errors: true
+  register: elasticsearch_service
+  become: true
+- name: Install elasticsearch
+  ansible.builtin.apt:
+    deb: "https://artifacts.elastic.co/downloads/elasticsearch/elasticsearch-{{ version }}-amd64.deb"
+    state: present
+  become: true
+  when: elasticsearch_service.status is not defined
+- name: Install elasticsearch
+  ansible.builtin.systemd:
+    state: started
+    name: elasticsearch
+    enabled: true
+    daemon_reload: true
+  become: true
+  when: elasticsearch_service.status is not defined
+
+# --  CONFIGURE
+- name: "Configure elasticsearch"
+  ansible.builtin.template:
+    src: "elasticsearch.yml.j2"
+    dest: /etc/elasticsearch/elasticsearch.yml
+    backup: true
+    force: yes
+    mode: '660'
+    group: elasticsearch
+  notify:
+  - Restart elasticsearch
+  become: true
+

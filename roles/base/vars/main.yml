@@ -1,0 +1,14 @@
+---
+# vars file for base
+required_packages:
+  - name: gnupg2
+    state: present
+  - name: curl
+    state: present
+  - name: apt-transport-https
+    state: present
+  - name: default-jre
+    state: present 
+  - name: default-jdk
+    state: present
+  

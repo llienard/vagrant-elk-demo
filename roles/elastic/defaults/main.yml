@@ -1,0 +1,5 @@
+---
+# defaults file for elastic
+version: 8.3.2
+xpack_security_enabled: false
+xpack_security_http_ssl: false

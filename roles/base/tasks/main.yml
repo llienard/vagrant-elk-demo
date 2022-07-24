@@ -1,0 +1,8 @@
+---
+# tasks file for base
+- name: Ensure required packages are installed
+  apt:
+    name: "{{ item.name }}"
+    state: "{{ item.state }}"
+  loop: "{{ required_packages }}"
+  become: true

@@ -1,0 +1,21 @@
+---
+- name: Installation & configuration ELK
+  hosts: all
+  tasks:
+  - name: Update the apt cache
+    ansible.builtin.apt:
+      update_cache: true
+      cache_valid_time: 3600
+      force_apt_get: true
+    become: true
+  - name: Basics & requirements configuration
+    ansible.builtin.import_role:
+        name: base
+  - name: "Elastic : Installation & Configuration"
+    ansible.builtin.import_role:
+        name: elastic
+
+  - name: Remove useless packages from the cache
+    apt:
+      autoclean: yes
+    become: true
