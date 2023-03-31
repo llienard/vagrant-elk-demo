@@ -3,7 +3,7 @@
 def register(params)
 	@source_field = params["source"]
 	@target_field = params["target"]
-	@item_delimiter = params["itemDelimiter"] != nil ? params["itemDelimiter"] : ","
+	@delimiter = params["delimiter"] != nil ? params["delimiter"] : ","
 
 end
 
@@ -16,9 +16,11 @@ def filter(event)
     value = event.get(@source_field)
 
 	if value
+		logger.info("environments:", value)
 		result = []
-		values = value.split(@item_delimiter, -1).map { |v| v.strip  }
+		values = value.split(@delimiter, -1).map { |v| v.strip  }
 		values.each { |environment|
+			logger.info("env value splitted:", environment)
 			o = {}
 			if /^([^(:]*)\s*(?:\(([^)]*)\))?\s*:\s*([^(]*)?\s*(?:\(([^)]*)\))?$/ =~ environment.strip
 				o[:name] = "#{$1}".strip
@@ -44,7 +46,7 @@ test "extract multiple envs with datas" do
 		{ 
 			"source" => "[datas][field]",
 			"target" => "[envs]",
-			"itemDelimiter" => "\n"
+			"delimiter" => "\n"
 		}
 	end
 
@@ -92,7 +94,7 @@ test "extract single event with version" do
 		{ 
 			"source" => "[datas][field]",
 			"target" => "[envs]",
-			"itemDelimiter" => "\n"
+			"delimiter" => "\n"
 		}
 	end
 
@@ -120,6 +122,52 @@ test "extract single event with version" do
 		events.first.get("envs").at(0)['type'] == "PROD"
 		events.first.get("envs").at(0)['target'] == "Client"
 		events.first.get("envs").at(0)['url'] == "https://monsite.com"
+	end
+
+end
+
+test "PROD (Client): {EOL}MAINTENANCE (Client) : {EOL}REC  (Client:) : {EOL}INT (Qomity) : (VM)" do
+	parameters do
+		{ 
+			"source" => "[datas][field]",
+			"target" => "[envs]",
+			"delimiter" => "{EOL}"
+		}
+	end
+
+	in_event { 
+		{ 
+			"datas" => {
+				"field": "PROD (Client): {EOL}MAINTENANCE (Client) : {EOL}REC  (Client:) : {EOL}INT (Qomity) : (VM)"
+			} 
+		}
+ 	}
+
+	expect("1 event sent") do |events|
+		events.size == 1
+	end
+
+	expect("envs is an array") do |events|
+		events.first.get('envs') != nil && events.first.get('envs').kind_of?(Array)
+	end
+
+	expect("1 env extracted") do |events|
+		events.first.get("envs").size == 4
+	end
+
+	expect("environement is well filled") do |events|
+		events.first.get("envs").at(0)['type'] == "PROD"
+		events.first.get("envs").at(0)['target'] == "Client"
+
+		events.first.get("envs").at(1)['type'] == "MAINTENANCE"
+		events.first.get("envs").at(1)['target'] == "Client"
+
+		events.first.get("envs").at(2)['type'] == "REC"
+		events.first.get("envs").at(2)['target'] == "Client"
+
+		events.first.get("envs").at(3)['type'] == "INT"
+		events.first.get("envs").at(3)['target'] == "Qomity"
+		events.first.get("envs").at(3)['details'] == "VM"
 	end
 
 end

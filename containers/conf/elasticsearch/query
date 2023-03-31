@@ -1,0 +1,34 @@
+PUT projets-datas
+{
+    "mappings": {
+        "properties": {
+            "project": {
+                "properties": {
+                    "environments": {
+                        "type": "nested"
+                    },
+                    "development": {
+                        "properties": {
+                            "languages": {
+                                "type": "nested",
+                                "dynamic" : true
+                            },
+                            "frameworks": {
+                                "type": "nested",
+                                "dynamic" : true
+                            },
+                            "middlewares": {
+                                "type": "nested",
+                                "dynamic" : true
+                            },
+                            "databases": {
+                                "type": "nested",
+                                "dynamic" : true
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

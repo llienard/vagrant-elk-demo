@@ -59,7 +59,8 @@ services:
     container_name: filebeat
     volumes:
       - ./conf/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
-      - ${PROJETS_CSV_PATH}:/var/log/projets.csv:ro
+      - ./conf/filebeat/projets.csv:/var/log/projets.csv:ro
+      # - ${PROJETS_CSV_PATH}:/var/log/projets.csv:ro
     # network_mode: "host"
 #  nginx:
 #    image: "nginx:1.23"
