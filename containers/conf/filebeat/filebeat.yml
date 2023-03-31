@@ -1,0 +1,27 @@
+filebeat.config:
+  modules:
+    path: ${path.config}/modules.d/*.yml
+    reload.enabled: false
+filebeat.inputs:
+  - type: filestream
+    id: projects-csv
+    paths:
+      - /var/log/projets.csv
+processors:
+  - add_docker_metadata: ~
+  - decode_csv_fields:
+      fields:
+        message: decoded.csv
+      separator: ";"
+      ignore_missing: true
+      overwrite_keys: true
+      trim_leading_space: true
+      fail_on_error: true
+
+output.logstash:
+  hosts: ["logstash:5044"]
+
+# output.elasticsearch:
+#   hosts: '${ELASTICSEARCH_HOSTS:elasticsearch:9200}'
+#   username: '${ELASTICSEARCH_USERNAME:}'
+#   password: '${ELASTICSEARCH_PASSWORD:}'

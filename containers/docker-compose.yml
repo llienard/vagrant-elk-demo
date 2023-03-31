@@ -7,7 +7,7 @@ services:
     ports:
       - ${ES_PORT}:9200
     volumes:
-      - ${WORKING_DIR}/elasticsearch/data:/usr/share/elasticsearch/data:rw
+      - ${WORKING_DIR}/elasticsearch/data/:/usr/share/elasticsearch/data/:rw
       - ./conf/elasticsearch/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml:rw
       - xpack.license.self_generated.type=${LICENSE}
     mem_limit: ${ELASTIC_MEM_LIMIT}
@@ -45,16 +45,22 @@ services:
           interval: 10s
           timeout: 10s
           retries: 120
-#  logstash:
-#    image: "docker.elastic.co/logstash/logstash:${STACK_VERSION}"
-#    container_name: logstash
-#    volumes:
-#      - ./conf/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
-#      - ./conf/logstash/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
-#      - ${WORKING_DIR}/nginx/logs:/var/log/nginx:ro
-#      - ${WORKING_DIR}/nginx/notice-logs:/var/log/nginx-notice:ro
-#      - ${WORKING_DIR}/nginx/tools-trace-logs:/var/log/nginx-tools-trace:ro
-#    network_mode: "host"
+  logstash:
+    image: "docker.elastic.co/logstash/logstash:${STACK_VERSION}"
+    container_name: logstash
+    volumes:
+      - ./conf/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+      - ./conf/logstash/logstash.yml:/usr/share/logstash/config/logstash.yml:ro
+      - ./conf/logstash/filters/:/usr/share/logstash/filters/:ro
+    command: sh -c "bin/logstash-plugin install logstash-filter-alter && logstash"
+    # network_mode: "host"
+  filebeat:
+    image: "docker.elastic.co/beats/filebeat:${STACK_VERSION}"
+    container_name: filebeat
+    volumes:
+      - ./conf/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - ${PROJETS_CSV_PATH}:/var/log/projets.csv:ro
+    # network_mode: "host"
 #  nginx:
 #    image: "nginx:1.23"
 #    container_name: nginx
@@ -64,3 +70,5 @@ services:
 #      - ${WORKING_DIR}/nginx/notice-logs:/var/log/nginx-notice:rw
 #      - ${WORKING_DIR}/nginx/tools-trace-logs:/var/log/nginx-tools-trace:rw
 #    network_mode: "host"
+networks:
+  elk:
